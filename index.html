@@ -1917,6 +1917,47 @@
       }).format(value);
     }
 
+    function normalizeCouponCode(value = "") {
+      return String(value).trim().toLowerCase();
+    }
+
+    function getCouponRate(code = appliedCoupon) {
+      const normalized = normalizeCouponCode(code);
+      const codes = SITE_CONFIG.commerce.couponCodes || {};
+      return Number(codes[normalized] || 0);
+    }
+
+    function getCartSubtotal() {
+      return cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    }
+
+    function getCartDiscount(subtotal = getCartSubtotal()) {
+      return subtotal * (getCouponRate() / 100);
+    }
+
+    function getCartTotal(subtotal = getCartSubtotal()) {
+      return subtotal - getCartDiscount(subtotal);
+    }
+
+    function applyCoupon(code) {
+      const normalized = normalizeCouponCode(code);
+      if (!normalized) {
+        appliedCoupon = "";
+        persistCart();
+        renderCart();
+        showToast("Cupón eliminado");
+        return;
+      }
+      if (!getCouponRate(normalized)) {
+        showToast("Cupón no válido");
+        return;
+      }
+      appliedCoupon = normalized;
+      persistCart();
+      renderCart();
+      showToast(`Cupón ${normalized.toUpperCase()} aplicado`);
+    }
+
     function activeProducts() {
       return SITE_CONFIG.products.filter(product => product.enabled);
     }
